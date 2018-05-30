@@ -1,0 +1,142 @@
+<html>
+    <head>
+        <title>Fitts' Law</title>
+        <style>
+            body { 
+                font-family: Verdana;
+                cursor: pointer;
+            }
+            :root {
+                --box-width: 400px;
+                --box-height: 600px;
+                --circle-radius: 100px;
+            }
+            .box { 
+                margin: 30px auto;
+                border: 1px solid #999; 
+                width: var(--box-width);
+                height: var(--box-height);
+            }
+            .circle { 
+                border-radius: calc(var(--circle-radius) / 2);
+                height: var(--circle-radius);
+                width: var(--circle-radius);
+                margin-left: calc(var(--box-width) / 2 - var(--circle-radius) / 2);
+                margin-top: calc(var(--box-height) / 2 - var(--circle-radius) / 2);
+                background-color: #0A536B;
+                color: #FFF;
+                font-size: 12px;
+                line-height: 14px;
+                padding-top: calc(var(--circle-radius) / 2 - 14px);
+                text-align: center;
+                box-sizing: border-box;
+            }
+            .results { 
+                margin-left: auto; 
+                margin-right: auto;
+            }
+        </style>
+        <script type="text/javascript">
+            var runs = 0; // Number of circles we have shown
+            var data = []; // Array of retrieved click data
+            var lastClick = {};
+
+            var screenWidth = 400;
+            var screenHeight = 600;
+            var circleRadius = 100;
+
+            var currentX, currentY; 
+            
+            /**
+             * Register clicks, either outside or inside the circle
+             */
+            window.addEventListener('click', function(e) {
+                if (runs == 0 && e.target.id != "circle") { 
+                    // We didn't start yet, and the user has clicked outside of the button - so we don't do anything
+                    return;
+                }  else if (runs == 0) {
+                    // Test has not been started yet, user clicks on circle - start the test
+                    document.getElementById("circle").innerHTML = ""; // Clear text
+                    recordClick(false, true);
+                    newRun();
+                } else if (e.target.id != "circle") {
+                    // User misclick
+                    recordClick(false, false);
+                    newRun();
+                } else { 
+                    // User clicked on circle 
+                    recordClick(true, false);
+                    newRun();
+                }
+            });
+
+            /** 
+             * Function to draw a new circle after a user click
+             */
+            function newRun() {
+                if (runs == 8) { 
+                    circleRadius = 20;
+                    document.getElementById("circle").style.setProperty('--circle-radius', '20px');
+                } else if (runs == 16) { 
+                    circleRadius = 50;
+                    document.getElementById("circle").style.setProperty('--circle-radius', '50px');
+                } else if (runs == 24) { 
+                    // Done!
+                    circleRadius = 200;
+                    document.getElementById("circle").style.setProperty('--circle-radius', '200px');
+                    document.getElementById("circle").innerHTML = "Thanks for participating!";
+
+                    // Generate a string out of the results 
+                    var resultString = "";
+                    for (i=0; i < data.length; i++) {
+                        resultString += JSON.stringify(data[i]) + "<br />";
+                    }
+
+                    document.getElementById("results").innerHTML = resultString;
+                } else if (runs > 24) { 
+                    return;
+                }
+
+                currentX = Math.floor(Math.random() * (screenWidth - circleRadius*2) + circleRadius); 
+                currentY = Math.floor(Math.random() * (screenHeight - circleRadius*2) + circleRadius); 
+
+                document.getElementById("circle").style.marginLeft = currentX;
+                document.getElementById("circle").style.marginTop = currentY;
+                
+                runs++;
+            }
+
+            function recordClick(inCircle, startClick) {
+                if (!startClick) { 
+                    // Euclidean distance between two points
+                    var distance = Math.sqrt(
+                        Math.pow((Math.abs(lastClick.x - currentX)), 2)
+                         + Math.pow((Math.abs(lastClick.y - currentY)), 2),
+                        2)
+
+                    data.push(
+                        {
+                            "distance" : distance,
+                            "time": Date.now() - lastClick.time,
+                            "inCircle": inCircle,
+                            "radius": circleRadius
+                        }
+                    );
+                }
+                
+                lastClick = { "x": currentX, "y": currentY, "time": Date.now() }
+                console.log(data);
+            }
+        </script>
+    </head>
+    <body>
+        <div class="box">
+            <div id="circle" class="circle">
+                Click here to start
+            </div>
+        </div>
+        <div class="results" id="results">
+        
+        </div>
+    </body>
+</html>
