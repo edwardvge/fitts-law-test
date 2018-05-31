@@ -5,17 +5,13 @@
             body { 
                 font-family: Verdana;
                 cursor: pointer;
+                padding: 0;
+                margin: 0;
             }
             :root {
-                --box-width: 400px;
-                --box-height: 600px;
+                --box-width: 100vw;
+                --box-height: 100vh;
                 --circle-radius: 100px;
-            }
-            .box { 
-                margin: 30px auto;
-                border: 1px solid #999; 
-                width: var(--box-width);
-                height: var(--box-height);
             }
             .circle { 
                 border-radius: calc(var(--circle-radius) / 2);
@@ -41,9 +37,11 @@
             var data = []; // Array of retrieved click data
             var lastClick = {};
 
-            var screenWidth = 400;
-            var screenHeight = 600;
-            var circleRadius = 100;
+            var screenWidth = window.innerWidth;
+            var screenHeight = window.innerHeight;
+
+            console.log("x: " + screenWidth + ", y: " + screenHeight);
+            var circleRadius;
 
             var currentX, currentY; 
             
@@ -74,26 +72,22 @@
              * Function to draw a new circle after a user click
              */
             function newRun() {
-                if (runs == 8) { 
-                    circleRadius = 20;
-                    document.getElementById("circle").style.setProperty('--circle-radius', '20px');
-                } else if (runs == 16) { 
-                    circleRadius = 50;
-                    document.getElementById("circle").style.setProperty('--circle-radius', '50px');
-                } else if (runs == 24) { 
-                    // Done!
-                    circleRadius = 200;
-                    document.getElementById("circle").style.setProperty('--circle-radius', '200px');
-                    document.getElementById("circle").innerHTML = "Thanks for participating!";
-
-                    // Generate a string out of the results 
-                    var resultString = "";
-                    for (i=0; i < data.length; i++) {
-                        resultString += JSON.stringify(data[i]) + "<br />";
-                    }
-
-                    document.getElementById("results").innerHTML = resultString;
-                } else if (runs > 24) { 
+                if (data.length > 0 && (Date.now() - data[0].time) > 60000) { 
+                    lastRun();
+                    return;
+                }
+                if (runs == 0) { 
+                    circleRadius = Math.max(screenWidth, screenHeight) * 0.15;
+                    document.getElementById("circle").style.setProperty('--circle-radius', circleRadius + 'px');
+                } else if (runs == 10) { 
+                    circleRadius = Math.max(screenWidth, screenHeight) * 0.05;
+                    document.getElementById("circle").style.setProperty('--circle-radius', circleRadius + 'px');
+                } else if (runs == 20) { 
+                    circleRadius = Math.max(screenWidth, screenHeight) * 0.1;
+                    document.getElementById("circle").style.setProperty('--circle-radius', circleRadius + 'px');
+                } else if (runs == 30) { 
+                    lastRun();
+                } else if (runs > 30) { 
                     return;
                 }
 
@@ -106,34 +100,50 @@
                 runs++;
             }
 
+            function lastRun() { 
+                // Done!
+                circleRadius = 200;
+                document.getElementById("circle").style.setProperty('--circle-radius', '200px');
+                document.getElementById("circle").innerHTML = "Thanks for participating!";
+
+                // Generate a string out of the results 
+                var resultString = "";
+                for (i=0; i < data.length; i++) {
+                    resultString += JSON.stringify(data[i]) + "<br />";
+                }
+
+                document.getElementById("results").innerHTML = resultString;
+            }
+
             function recordClick(inCircle, startClick) {
+                var currentTime = Date.now();
+
                 if (!startClick) { 
                     // Euclidean distance between two points
                     var distance = Math.sqrt(
                         Math.pow((Math.abs(lastClick.x - currentX)), 2)
                          + Math.pow((Math.abs(lastClick.y - currentY)), 2),
                         2)
-
+                    
                     data.push(
                         {
                             "distance" : distance,
-                            "time": Date.now() - lastClick.time,
+                            "timeDiff": currentTime - lastClick.time,
+                            "time": currentTime,
                             "inCircle": inCircle,
                             "radius": circleRadius
                         }
                     );
                 }
                 
-                lastClick = { "x": currentX, "y": currentY, "time": Date.now() }
+                lastClick = { "x": currentX, "y": currentY, "time": currentTime }
                 console.log(data);
             }
         </script>
     </head>
     <body>
-        <div class="box">
-            <div id="circle" class="circle">
-                Click here to start
-            </div>
+        <div id="circle" class="circle">
+            Click here to start
         </div>
         <div class="results" id="results">
         
