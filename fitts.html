@@ -36,6 +36,7 @@
             var runs = 0; // Number of circles we have shown
             var data = []; // Array of retrieved click data
             var lastClick = {};
+            var end = false;
 
             var screenWidth = window.innerWidth;
             var screenHeight = window.innerHeight;
@@ -72,23 +73,22 @@
              * Function to draw a new circle after a user click
              */
             function newRun() {
-                if (data.length > 0 && (Date.now() - data[0].time) > 60000) { 
+                if (end)
+                    return;
+                if (data.length > 0 && (Date.now() - data[0].time) > 30000 && !end) { 
                     lastRun();
+                    end = true;
                     return;
                 }
-                if (runs == 0) { 
+                if (runs%30 == 0) { 
                     circleRadius = Math.max(screenWidth, screenHeight) * 0.15;
                     document.getElementById("circle").style.setProperty('--circle-radius', circleRadius + 'px');
-                } else if (runs == 10) { 
+                } else if (runs%30 == 10) { 
                     circleRadius = Math.max(screenWidth, screenHeight) * 0.05;
                     document.getElementById("circle").style.setProperty('--circle-radius', circleRadius + 'px');
-                } else if (runs == 20) { 
+                } else if (runs%30 == 20) { 
                     circleRadius = Math.max(screenWidth, screenHeight) * 0.1;
                     document.getElementById("circle").style.setProperty('--circle-radius', circleRadius + 'px');
-                } else if (runs == 30) { 
-                    lastRun();
-                } else if (runs > 30) { 
-                    return;
                 }
 
                 currentX = Math.floor(Math.random() * (screenWidth - circleRadius*2) + circleRadius); 
@@ -113,6 +113,16 @@
                 }
 
                 document.getElementById("results").innerHTML = resultString;
+
+                // Let's mail the results
+                var http = new XMLHttpRequest();
+                var json_upload = "data=" + JSON.stringify(data);
+                http.open('POST', '/results.php');
+                http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                http.send(json_upload);
+                http.onload = function() { 
+                    console.log("Results sent");
+                } 
             }
 
             function recordClick(inCircle, startClick) {
